@@ -16,19 +16,17 @@ var pool = sync.Pool{
 	},
 }
 
-func processData(data []byte) []byte {
-	// 在这里进行你的数据处理逻辑
-	// 这里只是一个简单的示例
-	return []byte(fmt.Sprintf("Processed Data: %s", string(data)))
-}
-
 func handleFileMode(filename string) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Println("读取文件失败：", err)
 		return
 	}
-	processedData := processData(data)
+	processedData, err := GetCompressProcessor().process(data)
+	if err != nil {
+		fmt.Println("处理文件失败：", err)
+		return
+	}
 	fmt.Println(string(processedData))
 }
 
@@ -61,7 +59,12 @@ func handleHTTPMode(remoteUrl string, localPort int) {
 				return
 			}
 
-			processedData := processData(data)
+			processedData, err := GetCompressProcessor().process(data)
+			if err != nil {
+				http.Error(w, "Error processing remote data: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+
 			w.Write(processedData)
 		} else {
 			w.WriteHeader(http.StatusMethodNotAllowed)

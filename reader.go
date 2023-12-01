@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 )
@@ -14,18 +13,13 @@ func NewDataReader(data []byte) *DataReader {
 	return &DataReader{data: data}
 }
 
-func (r *DataReader) readString() (string, error) {
-	if len(r.data) == 0 {
+func (r *DataReader) readString(length int) (string, error) {
+	if len(r.data) < length {
 		return "", errors.New("no data available")
 	}
 
-	index := bytes.IndexByte(r.data, 0)
-	if index == -1 {
-		return "", errors.New("no null terminator found")
-	}
-
-	str := string(r.data[:index])
-	r.data = r.data[index+1:]
+	str := string(r.data[:length])
+	r.data = r.data[length:]
 	return str, nil
 }
 
@@ -39,9 +33,29 @@ func (r *DataReader) readInt() (uint64, error) {
 	return val, nil
 }
 
-// TODO
 func (r *DataReader) readLeb128Int() (uint64, error) {
-	return 0, nil
+	var result uint64 = 0
+	shift := 0
+	for i := 0; i < 8; i++ {
+		b, err := r.readByte()
+		if err != nil {
+			return 0, errors.New("not enough data for leb128 int")
+		}
+		result |= (uint64(b&0x7F) << shift)
+		if (b & 0x80) == 0 {
+			break
+		}
+		shift += 7
+	}
+	if shift == 56 {
+		b, err := r.readByte()
+		if err != nil {
+			return 0, errors.New("not enough data for leb128 int")
+		}
+		// 最后一 byte 没有标记位
+		result |= (uint64(b&0xFF) << shift)
+	}
+	return result, nil
 }
 
 func (r *DataReader) readFloat() (float64, error) {
