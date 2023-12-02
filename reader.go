@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"errors"
+	"math"
 )
 
 type DataReader struct {
@@ -63,7 +64,7 @@ func (r *DataReader) readFloat() (float64, error) {
 		return 0, errors.New("not enough data for float")
 	}
 
-	val := float64(binary.LittleEndian.Uint64(r.data[:8]))
+	val := math.Float64frombits(binary.LittleEndian.Uint64(r.data[:8]))
 	r.data = r.data[8:]
 	return val, nil
 }

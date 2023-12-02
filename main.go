@@ -34,6 +34,7 @@ func handleHTTPMode(remoteUrl string, localPort int) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			// 请求目标 URL 并获取响应数据
+			// TODO 加上 header
 			resp, err := http.Get(remoteUrl)
 			if err != nil {
 				fmt.Println("请求失败：", err)

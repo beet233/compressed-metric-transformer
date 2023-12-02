@@ -1,5 +1,5 @@
-github.com/beet233/common v0.44.0-compress-6 h1:sX50eIy1fxdtE/NJ8eklFRZXc8rlPDMwMVnGwILy6CY=
-github.com/beet233/common v0.44.0-compress-6/go.mod h1:ofAIvZbQ1e/nugmZGz4/qCb9Ap1VoSTIO7x0VV9VvuY=
+github.com/beet233/common v0.44.0-compress-8 h1:+M+0RZuvlPr8VxkEKSt1t7z4Jhvdd5vTZDR/May3rLI=
+github.com/beet233/common v0.44.0-compress-8/go.mod h1:ofAIvZbQ1e/nugmZGz4/qCb9Ap1VoSTIO7x0VV9VvuY=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
 github.com/golang/protobuf v1.5.3 h1:KhyjKVUg7Usr/dYsdSqoFveMYd5ko72D+zANwlG1mmg=
