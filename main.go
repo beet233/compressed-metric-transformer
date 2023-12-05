@@ -7,14 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"sync"
 )
-
-var pool = sync.Pool{
-	New: func() interface{} {
-		return make([]byte, 0, 1024) // 初始化一个大小为0，容量为1024的字节切片
-	},
-}
 
 func handleFileMode(filename string) {
 	data, err := os.ReadFile(filename)
@@ -31,38 +24,41 @@ func handleFileMode(filename string) {
 }
 
 func handleHTTPMode(remoteUrl string, localPort int) {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			// 请求目标 URL 并获取响应数据
-			// TODO 加上 header
-			resp, err := http.Get(remoteUrl)
+			client := http.Client{}
+			req, err := http.NewRequest(http.MethodGet, remoteUrl, nil)
 			if err != nil {
+				http.Error(w, "Error building remote request: "+err.Error(), http.StatusInternalServerError)
+				fmt.Println("构造请求失败：", err)
+				return
+			}
+			// 添加请求头
+			// req.Header.Add("Content-type", "application/json;charset=utf-8")
+			req.Header.Add("MetadataVersion", strconv.FormatUint(GetCompressProcessor().metadata.Version, 10))
+			resp, err := client.Do(req)
+			// resp, err := http.Get(remoteUrl)
+			if err != nil {
+				http.Error(w, "Error getting remote metrics: "+err.Error(), http.StatusInternalServerError)
 				fmt.Println("请求失败：", err)
 				return
 			}
 			defer resp.Body.Close()
 
 			// 读取响应数据并处理
-			// data, err := io.ReadAll(resp.Body)
-			// if err != nil {
-			// 	fmt.Println("读取响应失败：", err)
-			// 	return
-			// }
-
-			data := pool.Get().([]byte) // 从池中获取[]byte
-			defer pool.Put(data)        // 将[]byte放回池中以便重用
-
-			data = data[:0] // 重置data，确保其长度为0
-
-			_, err = io.ReadFull(resp.Body, data)
+			data, err := io.ReadAll(resp.Body)
 			if err != nil {
 				http.Error(w, "Error reading remote data: "+err.Error(), http.StatusInternalServerError)
+				fmt.Println("读取响应失败：", err)
 				return
 			}
 
+			// fmt.Println(string(data))
 			processedData, err := GetCompressProcessor().process(data)
 			if err != nil {
 				http.Error(w, "Error processing remote data: "+err.Error(), http.StatusInternalServerError)
+				fmt.Println("解析响应失败：", err)
 				return
 			}
 

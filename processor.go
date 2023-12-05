@@ -15,7 +15,7 @@ type CompressProcessor struct {
 	metadata expfmt.Metadata
 }
 
-var processor *CompressProcessor = &CompressProcessor{expfmt.Metadata{MetricFamilyMap: make(map[uint64]expfmt.MetricFamilyMetadata), ReverseMetricFamilyMap: make(map[string]uint64)}}
+var processor = &CompressProcessor{expfmt.Metadata{MetricFamilyMap: make(map[uint64]expfmt.MetricFamilyMetadata), ReverseMetricFamilyMap: make(map[string]uint64)}}
 
 var (
 	numBufPool = sync.Pool{
