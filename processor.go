@@ -15,6 +15,8 @@ type CompressProcessor struct {
 	metadata expfmt.Metadata
 }
 
+var enableStringPool = true
+
 var processor = &CompressProcessor{expfmt.Metadata{MetricFamilyMap: make(map[uint64]expfmt.MetricFamilyMetadata), ReverseMetricFamilyMap: make(map[string]uint64)}}
 
 var (
@@ -98,6 +100,28 @@ func (p *CompressProcessor) process(data []byte) ([]byte, error) {
 		// totally replace metadata
 		p.metadata = newMetadata
 	}
+	stringPool := make(map[uint64]string)
+	if enableStringPool {
+		dictMagicNum, err := reader.readString(7)
+		if dictMagicNum != "cprdict" {
+			return nil, errors.New("invalid magic num")
+		}
+		stringPoolLen, err := reader.readLeb128Int()
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; uint64(i) < stringPoolLen; i++ {
+			stringLen, err := reader.readLeb128Int()
+			if err != nil {
+				return nil, err
+			}
+			s, err := reader.readString(int(stringLen))
+			if err != nil {
+				return nil, err
+			}
+			stringPool[uint64(len(stringPool))] = s
+		}
+	}
 	valMagicNum, err := reader.readString(6)
 	if err != nil {
 		return nil, err
@@ -144,12 +168,20 @@ func (p *CompressProcessor) process(data []byte) ([]byte, error) {
 					return nil, err
 				}
 				labels[k] = labelIndex
-				labelValueLen, err := reader.readLeb128Int()
-				if err != nil {
-					return nil, err
+				if enableStringPool {
+					labelValuePoolIndex, err := reader.readLeb128Int()
+					if err != nil {
+						return nil, err
+					}
+					labelValues[k] = stringPool[labelValuePoolIndex]
+				} else {
+					labelValueLen, err := reader.readLeb128Int()
+					if err != nil {
+						return nil, err
+					}
+					labelValue, err := reader.readString(int(labelValueLen))
+					labelValues[k] = labelValue
 				}
-				labelValue, err := reader.readString(int(labelValueLen))
-				labelValues[k] = labelValue
 			}
 			switch metricFamilyMetadata.MetricType {
 			case dto.MetricType_COUNTER:
